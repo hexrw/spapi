@@ -1,0 +1,66 @@
+apis:
+  authorization@v1:
+    root: ./specs/authorization.json
+    openapi-ts:
+      output: ../package/src/schemas/authorization.ts
+  catalog-items@2022-04-01:
+    root: ./specs/catalogItems.json
+    openapi-ts:
+      output: ../package/src/schemas/catalogItems.ts
+  finances@v0:
+    root: ./specs/finances.json
+    openapi-ts:
+      output: ../package/src/schemas/finances.ts
+  listings-items@2021-08-01:
+    root: ./specs/listingsItems.json
+    openapi-ts:
+      output: ../package/src/schemas/listingsItems.ts
+  listings-restrictions@2021-08-01:
+    root: ./specs/listingsRestrictions.json
+    openapi-ts:
+      output: ../package/src/schemas/listingsRestrictions.ts
+  notifications@v1:
+    root: ./specs/notifications.json
+    openapi-ts:
+      output: ../package/src/schemas/notifications.ts
+  orders@v0:
+    root: ./specs/orders.json
+    openapi-ts:
+      output: ../package/src/schemas/orders.ts
+  product-fees@v0:
+    root: ./specs/productFees.json
+    openapi-ts:
+      output: ../package/src/schemas/productFees.ts
+  product-pricing@2022-05-01:
+    root: ./specs/productPricing.json
+    openapi-ts:
+      output: ../package/src/schemas/productPricing.ts
+  reports@2021-06-30:
+    root: ./specs/reports.json
+    openapi-ts:
+      output: ../package/src/schemas/reports.ts
+  sales@v1:
+    root: ./specs/sales.json
+    openapi-ts:
+      output: ../package/src/schemas/sales.ts
+  sellers@v1:
+    root: ./specs/sellers.json
+    openapi-ts:
+      output: ../package/src/schemas/sellers.ts
+  services@v1:
+    root: ./specs/services.json
+    openapi-ts:
+      output: ../package/src/schemas/services.ts
+  tokens@2021-03-01:
+    root: ./specs/tokens.json
+    openapi-ts:
+      output: ../package/src/schemas/tokens.ts
+
+theme:
+  openapi:
+    generateCodeSamples:
+      languages:
+        - lang: JavaScript
+    hideLogo: true
+
+telemetry: off
