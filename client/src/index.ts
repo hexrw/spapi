@@ -21,7 +21,7 @@ import { ofetch } from "ofetch"
 export interface ClientOptions extends Omit<RequestInit, "headers"> {
     region: "eu" | "fe" | "na"
     sandbox?: boolean
-    /** custom fetch (defaults to globalThis.fetch) */
+    /** custom fetch (~~defaults to globalThis.fetch~~) */
     fetch?: typeof fetch
     /** global querySerializer */
     querySerializer?: QuerySerializer<unknown>

@@ -16,7 +16,6 @@ servers:
   - url: https://sellingpartnerapi-na.amazon.com
   - url: https://sellingpartnerapi-eu.amazon.com
   - url: https://sellingpartnerapi-fe.amazon.com
-  - url: https://sellingpartnerapi-na.amazon.com/
 tags:
   - name: authorization_authorization
     x-displayName: authorization
@@ -69,14 +68,10 @@ paths:
         who have already authorized you for Amazon MWS do not need to
         re-authorize you for the Selling Partner API.
 
-
         **Usage Plan:**
 
-
         | Rate (requests per second) | Burst |
-
         | ---- | ---- |
-
         | 1 | 5 |
 
 
