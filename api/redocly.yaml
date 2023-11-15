@@ -1,8 +1,4 @@
 apis:
-  sp-api@v1:
-    root: ./sp-api.yaml
-    files:
-        - ./
   authorization@v1:
     root: ./specs/authorization.json
     openapi-ts:
