@@ -17,14 +17,11 @@ const orders = client.getOrders({
     }, pageSize: 5,
 })
 
-let pageNumber = 1
-
 console.log(orders)
 
-for await (const page of orders) {
-    console.log("\n", "_".repeat(50))
-    console.log(`Page ${pageNumber++}, ${(() => page.data?.payload?.Orders || []).length} items`)
-    console.log("_".repeat(50), "\n")
+for await (const chunk of orders) {
+    console.log(JSON.stringify((chunk ?? {}), null, 4).slice(0, 300) + "...")
+    //console.log(chunk)
 }
 
-console.log(`Total pages: ${pageNumber}`)
+console.log("done")

@@ -91,7 +91,11 @@ const orders = await client.getOrders({
 })
 ```
 
-## Current client SP-API coverage
+## Current internal fetch client SP-API coverage
+
+
+<details>
+<summary>Expand</summary>
 
 | API Reference                                               | Version    | Status |
 |-------------------------------------------------------------|------------|--------|
@@ -144,6 +148,8 @@ const orders = await client.getOrders({
 | Vendor Retail Procurement Orders API v1                     | v1         | 🚧     |
 | Vendor Retail Procurement Shipments API v1                  | v1         | 🚧     |
 | Vendor Retail Procurement Transaction Status API v1         | v1         | 🚧     |
+
+</details>
 
 ## Development
 

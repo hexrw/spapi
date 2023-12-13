@@ -1,5 +1,4 @@
 import type {
-    ErrorResponse,
     FilterKeys,
     HasRequiredKeys,
     MediaType,
@@ -10,7 +9,9 @@ import type {
 } from "openapi-typescript-helpers"
 
 import config from "./config"
+import type { FetchOptions as $FetchOptions, $Fetch } from "ofetch"
 import { ofetch } from "ofetch"
+import { $URL, joinURL } from "ufo"
 
 /**
  * NOTE: Though "any" is considered bad practice in general, this library relies
@@ -51,16 +52,18 @@ export type RequestBodyOption<T> = OperationRequestBodyContent<T> extends never
 
 export type FetchOptions<T> = RequestOptions<T> & Omit<RequestInit, "body">
 
-export type FetchResponse<T> =
-    | {
-        data: FilterKeys<SuccessResponse<ResponseObjectMap<T>>, MediaType>
-        error?: never
-        response: Response
-    } | {
-        data?: never
-        error: FilterKeys<ErrorResponse<ResponseObjectMap<T>>, MediaType>
-        response: Response
-    }
+// export type FetchResponse<T> =
+//     | {
+//         data: FilterKeys<SuccessResponse<ResponseObjectMap<T>>, MediaType>
+//         error?: never
+//         response: Response
+//     } | {
+//         data?: never
+//         error: FilterKeys<ErrorResponse<ResponseObjectMap<T>>, MediaType>
+//         response: Response
+//     }
+
+export type FetchResponse<T> = FilterKeys<SuccessResponse<ResponseObjectMap<T>>, MediaType> | never
 
 export type RequestOptions<T> = ParamsOption<T> & RequestBodyOption<T>
 
@@ -88,16 +91,19 @@ export default class FetchClient<Paths extends {}> {
     private readonly clientId: string
     private readonly clientSecret: string
     private readonly refreshToken: string
-    private readonly headers: HeadersOptions = {}
+    private readonly fetch: $Fetch
     private accessToken: {
         value: string | undefined
         expiresAt: Date | undefined
-    } = {} as any
+    } = {
+        value: undefined,
+        expiresAt: undefined,
+    }
 
     constructor(clientOptions: {
         region: "eu" | "fe" | "na"
         sandbox?: boolean
-        headers?: HeadersOptions
+        defaults?: $FetchOptions
         clientId: string
         clientSecret: string
         refreshToken: string
@@ -108,7 +114,19 @@ export default class FetchClient<Paths extends {}> {
         this.baseUrl = clientOptions?.sandbox
             ? regions[clientOptions.region].sandboxEndpoint
             : regions[clientOptions.region].endpoint
-        this.headers = clientOptions?.headers || {}
+
+        const defaults: $FetchOptions = {
+            method: "GET",
+            redirect: "follow",
+            headers: {
+                "Content-Type": "application/json",
+                "User-Agent": `hexrw/spapi/${config.version} (Language=JavaScript) (ClientId=${this.clientId})`,
+            },
+        }
+
+        clientOptions?.defaults
+            ? this.fetch = ofetch.create({ ...defaults, ...clientOptions.defaults })
+            : this.fetch = ofetch.create(defaults)
     }
 
     /**
@@ -160,55 +178,50 @@ export default class FetchClient<Paths extends {}> {
 
     /**
      * Per-request fetch logic
-     * @param {string} url
      */
-    private async coreFetch(url, fetchOptions) {
+    private async coreFetch(path: string | number | symbol, args: any) {
         const accessToken = await this.getAccessToken()
 
-        const {
-            headers,
-            body: requestBody,
-            params = {},
-            ...init
-        } = fetchOptions || {}
+        path = String(path)
+
+        console.log("args", args)
+        // TODO: Add types
+        const opts = args[0] ?? {}
 
         const authHeaders = new Headers({ "x-amz-access-token": accessToken })
 
+        if (opts?.params?.path)
+            for (const [k, v] of Object.entries(opts.params.path))
+                path = path.replace(`{${k}}`, encodeURIComponent(String(v)))
+
         // URL
-        const finalURL = buildUrl(url, {
-            baseUrl: this.baseUrl,
-            params,
-        })
-        const finalHeaders = mergeHeaders(
-            this.headers,
-            headers,
-            params.header,
-            authHeaders,
-        )
+        const url = new URL(joinURL(this.baseUrl, path))
+        if (opts?.params?.query) url.search = "?" + new URLSearchParams(opts.params.query).toString()
 
-        // fetch!
-        const requestInit = {
-            redirect: "follow",
-            ...init,
-            headers: finalHeaders,
+        const requestOpts: $FetchOptions = {
+            onRequestError: (err) => { console.error(err) },
+            onResponseError(ctx) { console.error(ctx) },
+            headers: opts?.headers
+                ? mergeHeaders(opts.headers, authHeaders)
+                : authHeaders,
         }
+        if (opts?.body) requestOpts.body = opts.body
 
-        // TODO: Refactor
-        requestInit.query = requestInit["0"].params.query
-        if (requestBody) requestInit.body = requestBody
+        console.debug(`[spapi] [Fetch] ${args.method} ${url.toString()}`)
 
-        console.debug(`[spapi] [Fetch] Init ${requestInit.method} ${finalURL}`)
+        console.log("opts", opts)
+        console.log("URL", url)
 
-        const response = await ofetch(finalURL, requestInit)
+        const res = await this.fetch(url.toString(), requestOpts)
             .then(res => {
-                console.info(`[spapi] [Fetch] ${requestInit.method} ${finalURL} OK`)
+                console.info(`[spapi] [Fetch] ${args.method} ${url.toString()} OK`)
                 return res
             })
             .catch(err => {
-                console.error(`[spapi] [Fetch] ${requestInit.method} ${finalURL} FAILED`)
-                console.error(err.data)
+                console.error(`[spapi] [Fetch] ${args.method} ${url.toString()} FAILED`)
+                console.error(err)
             })
-        return response
+        return res
     }
 
     /** Call a GET endpoint */
@@ -382,29 +395,6 @@ export default class FetchClient<Paths extends {}> {
 }
 
 /**
- * Construct URL string from baseUrl and handle path and query params
- */
-export function buildUrl<O>(
-    pathname: string,
-    options: {
-        baseUrl: string
-        params: {
-            query?: Record<string, unknown>
-            path?: Record<string, unknown>
-        }
-    },
-): string {
-    console.debug(`[spapi] [Fetch] Building final URL from ${options.baseUrl} and ${pathname}`, options.params)
-    let finalURL = `${options.baseUrl}${pathname}`
-    if (options.params.path) {
-        for (const [k, v] of Object.entries(options.params.path)) {
-            finalURL = finalURL.replace(`{${k}}`, encodeURIComponent(String(v)))
-        }
-    }
-    return finalURL
-}
-
-/**
  * Merge headers a and b, with b taking priority
  */
 export function mergeHeaders(
@@ -412,13 +402,11 @@ export function mergeHeaders(
 ): Headers {
     const headers = new Headers()
     for (const headerSet of allHeaders) {
-        if (!headerSet || typeof headerSet !== "object") {
-            continue
-        }
-        const iterator =
-            headerSet instanceof Headers
-                ? headerSet.entries()
-                : Object.entries(headerSet)
+        if (!headerSet || typeof headerSet !== "object") continue; // skip empty headers
+        const iterator = headerSet instanceof Headers
+            // @ts-ignore: TS doesn't know that Headers implements entries() and values()
+            ? headerSet.entries()
+            : Object.entries(headerSet)
         for (const [k, v] of iterator) {
             if (v === null) {
                 headers.delete(k)
