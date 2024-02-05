@@ -1,6 +1,6 @@
 {
     "name": "@hexrw/spapi",
-    "version": "1.0.0-alpha.3",
+    "version": "1.0.0-alpha.4",
     "description": "Amazon Selling Partner API JavaScript client with full type coverage.",
     "main": "dist/index.js",
     "type": "module",
