@@ -40,15 +40,15 @@ export type ParamsOption<T> = T extends {
     parameters: any
 }
     ? HasRequiredKeys<T["parameters"]> extends never
-        ? { params?: T["parameters"] }
-        : { params: T["parameters"] }
+    ? { params?: T["parameters"] }
+    : { params: T["parameters"] }
     : DefaultParamsOption
 
 export type RequestBodyOption<T> = OperationRequestBodyContent<T> extends never
     ? { body?: never }
     : undefined extends OperationRequestBodyContent<T>
-        ? { body?: OperationRequestBodyContent<T> }
-        : { body: OperationRequestBodyContent<T> }
+    ? { body?: OperationRequestBodyContent<T> }
+    : { body: OperationRequestBodyContent<T> }
 
 export type FetchOptions<T> = RequestOptions<T> & Omit<RequestInit, "body">
 
@@ -71,14 +71,17 @@ const regions = {
     na: {
         endpoint: "https://sellingpartnerapi-na.amazon.com",
         sandboxEndpoint: "https://sandbox.sellingpartnerapi-na.amazon.com",
+        authTokenEndpoint: "https://api.amazon.com/auth/o2/token",
     },
     eu: {
         endpoint: "https://sellingpartnerapi-eu.amazon.com",
         sandboxEndpoint: "https://sandbox.sellingpartnerapi-eu.amazon.com",
+        authTokenEndpoint: "https://api.amazon.co.uk/auth/o2/token",
     },
     fe: {
         endpoint: "https://sellingpartnerapi-fe.amazon.com",
         sandboxEndpoint: "https://sandbox.sellingpartnerapi-fe.amazon.com",
+        authTokenEndpoint: "https://api.amazon.co.jp/auth/o2/token",
     },
 }
 
@@ -96,9 +99,9 @@ export default class FetchClient<Paths extends {}> {
         value: string | undefined
         expiresAt: Date | undefined
     } = {
-        value: undefined,
-        expiresAt: undefined,
-    }
+            value: undefined,
+            expiresAt: undefined,
+        }
 
     constructor(clientOptions: {
         region: "eu" | "fe" | "na"
@@ -141,7 +144,8 @@ export default class FetchClient<Paths extends {}> {
             query: {
                 grant_type: "refresh_token", refresh_token: this.refreshToken,
                 client_id: this.clientId, client_secret: this.clientSecret,
-            } })
+            }
+        })
 
         date.setSeconds(date.getSeconds() + expires_in)  // add seconds to start time to get expiration time
 
@@ -184,7 +188,6 @@ export default class FetchClient<Paths extends {}> {
 
         path = String(path)
 
-        console.log("args", args)
         // TODO: Add types
         const opts = args[0] ?? {}
 
@@ -195,22 +198,22 @@ export default class FetchClient<Paths extends {}> {
                 path = path.replace(`{${k}}`, encodeURIComponent(String(v)))
 
         // URL
-        const url = new URL(joinURL(this.baseUrl, path))
-        if (opts?.params?.query) url.search = "?" + new URLSearchParams(opts.params.query).toString()
+        const url = new $URL(joinURL(this.baseUrl, path))
+        if (opts?.params?.query) url.query = opts.params.query
 
         const requestOpts: $FetchOptions = {
-            onRequestError: (err) => { console.error(err) },
-            onResponseError(ctx) { console.error(ctx) },
+            onRequestError: (err) => console.error(err),
+            onResponseError: (ctx) => console.error(ctx),
             headers: opts?.headers
                 ? mergeHeaders(opts.headers, authHeaders)
                 : authHeaders,
+            retry: 2,
+            retryDelay: 3000,
+            retryStatusCodes: [ 429 ],
         }
         if (opts?.body) requestOpts.body = opts.body
 
         console.debug(`[spapi] [Fetch] ${args.method} ${url.toString()}`)
-
-        console.log("opts", opts)
-        console.log("URL", url)
 
         const res = await this.fetch(url.toString(), requestOpts)
             .then(res => {
@@ -219,8 +222,9 @@ export default class FetchClient<Paths extends {}> {
             })
             .catch(err => {
                 console.error(`[spapi] [Fetch] ${args.method} ${url.toString()} FAILED`)
-                console.error(err)
+                throw err
             })
+
         return res
     }
 
@@ -242,9 +246,8 @@ export default class FetchClient<Paths extends {}> {
             : never
             : never
         >
-    > {
-        return this.coreFetch(url, { ...init, method: "GET" })
-    }
+    > { return this.coreFetch(url, { ...init, method: "GET" }) }
+
     /** Call a PUT endpoint */
     async put<P extends PathsWithMethod<Paths, "put">>(
         url: P,
@@ -263,9 +266,8 @@ export default class FetchClient<Paths extends {}> {
             : never
             : never
         >
-    > {
-        return this.coreFetch(url, { ...init, method: "PUT" })
-    }
+    > { return this.coreFetch(url, { ...init, method: "PUT" }) }
+
     /** Call a POST endpoint */
     async post<P extends PathsWithMethod<Paths, "post">>(
         url: P,
@@ -284,9 +286,8 @@ export default class FetchClient<Paths extends {}> {
             : never
             : never
         >
-    > {
-        return this.coreFetch(url, { ...init, method: "POST" })
-    }
+    > { return this.coreFetch(url, { ...init, method: "POST" }) }
+
     /** Call a DELETE endpoint */
     async delete<P extends PathsWithMethod<Paths, "delete">>(
         url: P,
@@ -305,9 +306,8 @@ export default class FetchClient<Paths extends {}> {
             : never
             : never
         >
-    > {
-        return this.coreFetch(url, { ...init, method: "DELETE" })
-    }
+    > { return this.coreFetch(url, { ...init, method: "DELETE" }) }
+
     /** Call a OPTIONS endpoint */
     async options<P extends PathsWithMethod<Paths, "options">>(
         url: P,
@@ -326,9 +326,8 @@ export default class FetchClient<Paths extends {}> {
             : never
             : never
         >
-    > {
-        return this.coreFetch(url, { ...init, method: "OPTIONS" })
-    }
+    > { return this.coreFetch(url, { ...init, method: "OPTIONS" }) }
+
     /** Call a HEAD endpoint */
     async head<P extends PathsWithMethod<Paths, "head">>(
         url: P,
@@ -347,9 +346,8 @@ export default class FetchClient<Paths extends {}> {
             : never
             : never
         >
-    > {
-        return this.coreFetch(url, { ...init, method: "HEAD" })
-    }
+    > { return this.coreFetch(url, { ...init, method: "HEAD" }) }
+
     /** Call a PATCH endpoint */
     async patch<P extends PathsWithMethod<Paths, "patch">>(
         url: P,
@@ -368,9 +366,8 @@ export default class FetchClient<Paths extends {}> {
             : never
             : never
         >
-    > {
-        return this.coreFetch(url, { ...init, method: "PATCH" })
-    }
+    > { return this.coreFetch(url, { ...init, method: "PATCH" }) }
+
     /** Call a TRACE endpoint */
     async trace<P extends PathsWithMethod<Paths, "trace">>(
         url: P,
@@ -389,9 +386,8 @@ export default class FetchClient<Paths extends {}> {
             : never
             : never
         >
-    > {
-        return this.coreFetch(url, { ...init, method: "TRACE" })
-    }
+    > { return this.coreFetch(url, { ...init, method: "TRACE" }) }
+
 }
 
 /**
